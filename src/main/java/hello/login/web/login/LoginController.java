@@ -11,6 +11,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -111,7 +112,7 @@ public class LoginController extends SessionConst{
     }
 
 
-    @PostMapping("/login")
+    // @PostMapping("/login")
     public String loginV3(@Valid @ModelAttribute LoginForm form, BindingResult bindingResult, HttpServletRequest req) {
         if (bindingResult.hasErrors()) {
             return "login/loginForm";
@@ -160,6 +161,44 @@ public class LoginController extends SessionConst{
         }
 
         return "redirect:/";
+    }
+
+    @PostMapping("/login")
+    public String loginV4(@Valid @ModelAttribute LoginForm form, BindingResult bindingResult,
+                          @RequestParam(defaultValue = "/") String redirectURL,
+                          HttpServletRequest req) {
+
+        if (bindingResult.hasErrors()) {
+            return "login/loginForm";
+        }
+
+        Member loginMember = loginService.login(form.getLoginId(), form.getPassword());
+
+        if (loginMember == null) {
+            bindingResult.reject("loginFail", "아이디 또는 비밀번호가 맞지 않습니다.");
+            return "login/loginForm";
+        }
+
+        //로그인 성공 처리 TODO
+
+
+        // 세션의 create 옵션에 대해 알아보자.
+        // request.getSession(true)
+        // 세션이 있으면 기존 세션을 반환한다.
+        // 세션이 없으면 새로운 세션을 생성해서 반환한다.
+        // request.getSession(false)
+        // 세션이 있으면 기존 세션을 반환한다.
+        // 세션이 없으면 새로운 세션을 생성하지 않는다. null 을 반환한다
+
+        // 세션이 있으면 있는 세션 반환, 없으면 신규 세션을 생성
+        HttpSession session = req.getSession(true);
+        session.setAttribute(LOGIN_MEMBER, loginMember); // 세션에 로그인 회원정보 저장
+
+
+        // 세션 관리자를 통해 세션을 생성하고, 회원 데이터 보관
+        // sessionManager.createSession(loginMember,res);
+
+        return "redirect:"+redirectURL;
     }
 
     private void expireCookil(HttpServletResponse response, String cookieName) {
